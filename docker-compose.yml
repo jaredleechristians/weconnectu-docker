@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  db:
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: "512M"
+
+  php-api:
+    build:
+      context: ./php
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: mydatabase
+
+    ports:
+      - "8080:80"
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: "512M"
+
+  nextjs:
+    build:
+      context: ./nextjs
+    depends_on:
+      - php-api
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: "512M"
+
+volumes:
+  db_data:
